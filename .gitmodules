@@ -1,0 +1,3 @@
+[submodule "utils/gaussian_random_fields"]
+	path = utils/gaussian_random_fields
+	url = https://github.com/bsciolla/gaussian-random-fields.git
