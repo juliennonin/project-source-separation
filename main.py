@@ -3,7 +3,6 @@ import data.generate_data as data
 import numpy as np
 from utils.slider_plot import SliderPlot
 import matplotlib.pyplot as plt
-import utils.splx_projection.splx_projection as splx
 from src.admm import admm
 %matplotlib qt
 
@@ -12,7 +11,8 @@ A = data.generate_img_map()
 R, N = A.shape
 L = R
 COEF = 30
-M = np.eye(R)
+M = COEF * np.eye(R)
+# M = 20 * np.random.rand(L, R)
 Y = data.generate_observation(M, A)
 
 #%%

@@ -1,25 +1,31 @@
 #%%
 import numpy as np
+import utils.splx_projection.splx_projection as splx
 
 #%%
 def admm(M, Y, mu, size):
-    assert np.all(M[0,0] * np.eye(M.shape[0]) == M)
-    coef = M[0,0]
     Ak = np.zeros(size)
-    Sk = M @ Ak
-    Uk = 0*Sk
+    Uk = 1*Y
+    Vk = np.zeros(size)
+    Luk = 1*Uk  # dual
+    Lvk = 1*Vk
+
     r, imA, F = [], [], []
+    I = np.eye(M.shape[1])
+    Inv = np.linalg.inv(I + M.T @ M)
     imA.append(Ak)
-    
+
     for k in range(100):
-        Nu = (M @ Ak) - Sk
-        Sk = 0.5 * (Nu - (1/mu) + np.sqrt((Nu - 1/mu)**2 + (4*Y/mu)))
-        # Ak = splx.splx_projection(Sk - Uk) # Ak - Uk
-        Ak = Sk - Uk  # Ak - Uk
-        Ak[Ak < 0] = 0
-        Ak /= coef
-        Uk = Uk + (M @ Ak - Sk)
+        Ak =  Inv @ (M.T @ (Uk + Luk) + (Vk + Lvk))
+        Nu = (M @ Ak) - Luk
+        Uk = 0.5 * (Nu - (1/mu) + np.sqrt((Nu - 1/mu)**2 + (4*Y/mu)))
+        Vk = splx.splx_projection(Ak - Lvk, r=1)
+        # Vk = Ak - Lvk
+        # Vk[Vk < 0] = 0
+        Luk = Luk - (M@Ak - Uk)
+        Lvk = Lvk - (Ak - Vk)
+        
         imA.append(Ak)
+        r.append(np.linalg.norm(M@Ak - Uk, 2))
         # F.append(objective(M, Ak, Y))
-        r.append(np.linalg.norm(M@Ak - Sk, 2))
     return r, np.array(imA), F
