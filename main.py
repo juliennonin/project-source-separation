@@ -3,8 +3,8 @@ import data.generate_data as data
 import numpy as np
 from utils.slider_plot import SliderPlot
 import matplotlib.pyplot as plt
-from src.admm import admm
-%matplotlib qt
+from src.admm import admm_wo_reg
+# %matplotlib qt
 
 #%%
 A = data.generate_img_map()
@@ -15,7 +15,7 @@ M = COEF * np.eye(R)
 # M = 20 * np.random.rand(L, R)
 Y = data.generate_observation(M, A)
 
-#%%
+#%% Display data
 fig = plt.figure()
 axY = plt.subplot(121)
 sY = SliderPlot(axY, Y, title="Y")
@@ -25,27 +25,17 @@ sA = SliderPlot(axA, A, title="A")
 # sZ = SliderPlot(axZ, M)
 plt.show()
 
-#%%
-r, Ak, F = admm(M, Y, 1e-4, (R, N))
+#%% Compute ADMM without regularization term
+A_hat, r, F = admm_wo_reg(M, Y, 1e-4, (R, N))
 
-# %%
-k = 0
-fig = plt.figure(figsize=(10, 6))
-plt.subplot('131')
-plt.imshow(A[k].reshape((int(np.sqrt(N)), -1)).T, cmap='gray')
-ax = plt.subplot('132')
-
-s = SliderPlot(ax, Ak[:,k,:], legend='k', valinit=100)
-plt.subplot('133')
-plt.imshow(Y[k].reshape((int(np.sqrt(N)), -1)).T, cmap='gray')
+#%% Display result
+fig = plt.figure()
+axY = plt.subplot(121)
+sY = SliderPlot(axY, Y, title="Y")
+axA = plt.subplot(122)
+sA = SliderPlot(axA, A_hat, title="A")
 plt.show()
 
-
-# %%
-plt.figure()
-plt.imshow((Y[k]/COEF - Ak[-1,k]).reshape((int(np.sqrt(N)), -1)).T)
-plt.colorbar()
-# %%
+#%% Display residuals and objectives
 plt.plot(r)
-
-# %%
+plt.plot(F)
