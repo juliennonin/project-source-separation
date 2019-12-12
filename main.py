@@ -3,7 +3,7 @@ import data.generate_data as data
 import numpy as np
 from utils.slider_plot import SliderPlot
 import matplotlib.pyplot as plt
-from src.admm import admm_wo_reg
+from src.admm import admm
 # %matplotlib qt
 
 #%%
@@ -26,7 +26,7 @@ sA = SliderPlot(axA, A, title="A")
 plt.show()
 
 #%% Compute ADMM without regularization term
-A_hat, r, F = admm_wo_reg(M, Y, 1e-4, (R, N))
+A_hat, r, F = admm(M, Y, 1e-3, 1e-5,(R, N))
 
 #%% Display result
 fig = plt.figure()
@@ -39,3 +39,6 @@ plt.show()
 #%% Display residuals and objectives
 plt.plot(r)
 plt.plot(F)
+
+
+# %%
