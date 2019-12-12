@@ -1,12 +1,12 @@
 import unittest
 import numpy as np
-import splx_projection
+import utils.splx_projection.splx_projection as splxp
 
 class SplxProjTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(SplxProjTest, self).__init__(*args, **kwargs)
-        self.x = splx_projection.splx_projection(np.random.rand(30,30), 1.)
+        self.x = splxp.splx_projection(np.random.rand(30,30), 1.)
 
     def test_sum_to_one(self):
         z = np.sum(self.x, axis=0)

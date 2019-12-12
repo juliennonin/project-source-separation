@@ -57,7 +57,7 @@ def admm(M, Y, rho, alpha, size):
 
     for _ in range(100):
         print(_)
-        A =  C @ (M.T @ (U - LambdaU) + (V - LambdaV))
+        A =  C @ (M.T @ (U - LambdaU) + (V - LambdaV) + (Z - LambdaZ))
 
         # Splitting variables update
         Nu = (M @ A) + LambdaU - 1/rho  # auxilary variable
