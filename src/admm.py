@@ -4,7 +4,7 @@ import utils.splx_projection.splx_projection as splx
 import src.fbpd as fbpd
 
 #%%
-def objective(U, Y):
+def real_objective(U, Y):
     # indicatrix of positive values
     I = np.copy(U)
     I[I<=0] = np.inf
@@ -19,8 +19,11 @@ def objective(U, Y):
 
     return np.sum(U + I - L)
 
+def objective(U, Y):
+    return np.sum(-Y * np.log(U) + U)
+
 #%%
-def admm(M, Y, rho, alpha, size):
+def admm(M, Y, rho, alpha, size, eps_abs=1e-2, eps_rel=1e-3, max_iter=25):
     """ADMM without regularization parameter
     Blind source separation with Poisson noise
     
@@ -55,8 +58,10 @@ def admm(M, Y, rho, alpha, size):
     I = np.eye(M.shape[1])
     C = np.linalg.inv(I + M.T @ M)  # auxilary variable (pre-computation)
 
-    for _ in range(100):
-        print(_)
+    iter = 0
+    while iter < max_iter:
+        # [TODO] : stopping criterion on norm_primal <= eps_primal and norm_dual <= eps_dual
+        print(iter)
         A =  C @ (M.T @ (U - LambdaU) + (V - LambdaV) + (Z - LambdaZ))
 
         # Splitting variables update
@@ -64,7 +69,7 @@ def admm(M, Y, rho, alpha, size):
         U = 0.5 * (Nu + np.sqrt(Nu**2 + (4*Y/rho)))
         V = splx.splx_projection(A + LambdaV, r=1)
         # V = np.maximum(A - LambdaV, 0)
-        Z, _ = fbpd.primal_dual_TV(A + LambdaZ, alpha / rho, 0.001)
+        Z = fbpd.primal_dual_TV_2D(A + LambdaZ, alpha / rho, 0.0001)
 
         # Lagrange's multipliers update
         LambdaU = LambdaU + M @ A - U
@@ -74,4 +79,6 @@ def admm(M, Y, rho, alpha, size):
         # Residuals & objective update
         norms_primal_U.append(np.linalg.norm(M @ A - U, 2))  # residual computation
         objectives.append(objective(M@A, Y))
+
+        iter += 1
     return A, norms_primal_U, objectives
