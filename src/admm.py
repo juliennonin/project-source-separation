@@ -3,6 +3,8 @@ import numpy as np
 import utils.splx_projection.splx_projection as splx
 import src.fbpd as fbpd
 
+from IPython.display import clear_output
+
 #%%
 def objective(U, Y):
     # indicatrix of positive values
@@ -20,7 +22,7 @@ def objective(U, Y):
     return np.sum(U + I - L)
 
 #%%
-def admm(M, Y, rho, alpha, size):
+def admm(M, Y, rho, alpha, size, max_iter=100):
     """ADMM without regularization parameter
     Blind source separation with Poisson noise
     
@@ -39,8 +41,8 @@ def admm(M, Y, rho, alpha, size):
     
     # Splitting variable initialisation
     U = M @ A
-    V = A
-    Z = A
+    V = np.copy(A)
+    Z = np.copy(A)
 
     # Lagrange's multipliers initialisation
     LambdaU = np.zeros(U.shape)
@@ -53,25 +55,31 @@ def admm(M, Y, rho, alpha, size):
 
     # Pre-computation
     I = np.eye(M.shape[1])
-    C = np.linalg.inv(I + M.T @ M)  # auxilary variable (pre-computation)
+    C = np.linalg.inv(2*I + M.T @ M)  # auxilary variable (pre-computation)
 
-    for _ in range(100):
-        print(_)
-        A =  C @ (M.T @ (U - LambdaU) + (V - LambdaV) + (Z - LambdaZ))
+    for _ in range(max_iter):
+        A = C @ (M.T @ (U - LambdaU) + (V - LambdaV)) # + (Z - LambdaZ))
+        MA = M @ A
 
         # Splitting variables update
-        Nu = (M @ A) + LambdaU - 1/rho  # auxilary variable
-        U = 0.5 * (Nu + np.sqrt(Nu**2 + (4*Y/rho)))
+        Nu = MA + LambdaU - 1/rho  # auxilary variable
+        U = 0.5 * (Nu + np.sqrt(Nu**2 + 4*Y/rho))
         V = splx.splx_projection(A + LambdaV, r=1)
         # V = np.maximum(A - LambdaV, 0)
-        Z, _ = fbpd.primal_dual_TV(A + LambdaZ, alpha / rho, 0.001)
+        # Z, _ = fbpd.primal_dual_TV(A + LambdaZ, alpha / rho, 0.001)
 
         # Lagrange's multipliers update
-        LambdaU = LambdaU + M @ A - U
+        LambdaU = LambdaU + MA - U
         LambdaV = LambdaV + A - V
-        LambdaZ = LambdaZ + A - Z
+        # LambdaZ = LambdaZ + A - Z
         
         # Residuals & objective update
         norms_primal_U.append(np.linalg.norm(M @ A - U, 2))  # residual computation
         objectives.append(objective(M@A, Y))
+
+        clear_output(wait = True)
+        print(f"{_+1}    {100*(_+1)/max_iter:.2f} %")
+
     return A, norms_primal_U, objectives
+
+# %%

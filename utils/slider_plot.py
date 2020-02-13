@@ -17,6 +17,7 @@ class SliderPlot():
         self.size = int(pixels**(0.5))
         self.im = ax.imshow(I[valinit].reshape((self.size, -1)).T, cmap=cmap)
         ax.set_title(title)
+        self.im.set_clim(I.min(), I.max())
         
         if slider:
             self.slider = slider
