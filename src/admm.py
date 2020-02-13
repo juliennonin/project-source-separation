@@ -22,7 +22,7 @@ def objective(U, Y):
     return np.sum(U + I - L)
 
 #%%
-def admm(M, Y, rho, alpha, size, max_iter=100):
+def admm(M, Y, rho, alpha, sigma, size, max_iter=100):
     """ADMM without regularization parameter
     Blind source separation with Poisson noise
     
@@ -58,7 +58,7 @@ def admm(M, Y, rho, alpha, size, max_iter=100):
     C = np.linalg.inv(2*I + M.T @ M)  # auxilary variable (pre-computation)
 
     for _ in range(max_iter):
-        A = C @ (M.T @ (U - LambdaU) + (V - LambdaV)) # + (Z - LambdaZ))
+        A = C @ (M.T @ (U - LambdaU) + (V - LambdaV) + (Z - LambdaZ))
         MA = M @ A
 
         # Splitting variables update
@@ -66,12 +66,12 @@ def admm(M, Y, rho, alpha, size, max_iter=100):
         U = 0.5 * (Nu + np.sqrt(Nu**2 + 4*Y/rho))
         V = splx.splx_projection(A + LambdaV, r=1)
         # V = np.maximum(A - LambdaV, 0)
-        # Z, _ = fbpd.primal_dual_TV(A + LambdaZ, alpha / rho, 0.001)
+        Z = fbpd.primal_dual_TV(A + LambdaZ, sigma, alpha / rho, 0.001)
 
         # Lagrange's multipliers update
         LambdaU = LambdaU + MA - U
         LambdaV = LambdaV + A - V
-        # LambdaZ = LambdaZ + A - Z
+        LambdaZ = LambdaZ + A - Z
         
         # Residuals & objective update
         norms_primal_U.append(np.linalg.norm(M @ A - U, 2))  # residual computation

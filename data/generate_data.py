@@ -21,13 +21,13 @@ def generate_img_map():
         A[i] = img.T.reshape((-1))
     return A
 
-def generate_abundance_map(R, size, thresh=-np.inf):
+def generate_abundance_map(R, size, thresh=-np.inf, alpha=3):
     N = size * size
     A = np.zeros((R, N))
 
     # generating R - 1 maps
     for r in range(R - 1):
-        abundancy_map = gaussian_random_field(alpha=2, size=size)
+        abundancy_map = gaussian_random_field(alpha=alpha, size=size)
         A[r] = abundancy_map.T.reshape((-1))
         A[r][A[r] < thresh] = 0
     

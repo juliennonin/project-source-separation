@@ -12,7 +12,7 @@ from src.admm import admm
 #%%
 np.random.seed(179)
 R, Nx = 5, 50  # nb of endmembers, size of map
-A = data.generate_abundance_map(R, Nx, thresh=0)
+A = data.generate_abundance_map(R, Nx, thresh=-np.inf, alpha=3)
 wavelengths, mat_names, M = data.generate_endmembers(R)
 L, N = len(wavelengths), Nx * Nx
 COEF = 500
@@ -31,7 +31,7 @@ sY = SliderPlot(axY, Y, title=r"$Y_\lambda$", legend=r"$\lambda$", valinit=91)
 axA = plt.subplot(222)
 sA = SliderPlot(axA, A, title=r"$A_r$", legend=r"r")
 axMA = plt.subplot(223)
-sMA = SliderPlot(axMA, M @ A, slider=sY.slider, valinit=91)
+sMA = SliderPlot(axMA, Y_true, slider=sY.slider, valinit=91)
 axM = plt.subplot(224)
 spectrum, = axM.plot(wavelengths, M[:,3])
 # plt.title(mat_names[3])
@@ -47,7 +47,7 @@ plt.legend()
 plt.show()
 
 #%% Compute ADMM without regularization term
-A_hat, r, F = admm(M, Y, 0.1, 1e-5, (R, N))  # rho=0.1
+A_hat, r, F = admm(M, Y, rho=0.1, alpha=1e-3, sigma=0.02, size=(R, N))  # rho=0.1
 
 #%% Display result
 fig = plt.figure()
@@ -58,7 +58,7 @@ sA = SliderPlot(axA, M@A_hat, title="Y hat")
 plt.show()
 
 #%%
-N_display =  np.random.randint(N, size=(5))
+# N_display = np.random.randint(N, size=(5))
 for i, n in enumerate(N_display):
     plt.plot((M@A_hat)[:,n], c=f'C{i}', label=str(n))
     plt.plot(Y_true[:,n], '--', c=f'C{i}', alpha=0.7)

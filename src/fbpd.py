@@ -22,29 +22,29 @@ def objective(X, A, Y, lam):
     return 0.5 * np.linalg.norm(A(X) - Y, ord='fro')**2 + lam * TV(X)
 
 #%%
-def primal_dual_TV(Y, lam, eps, A=lambda X: X, A_t=lambda X: X):
-    print(f'\tdual primal TV with lam={lam}, eps={eps}')
+def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=50):
+    print(f'\tdual primal TV with sigma={sigma}, lambda={lam}, eps={eps}')
     X = np.copy(Y)
     stopping_crit = eps + 1 
-    sigma = lam
     tau = 0.99 / (0.5 + 8*sigma)
     n, m = np.shape(Y)
-    Uh, Uv = np.zeros((n,m)), np.zeros((n,m))
+    Uh, Uv = discrete_gradient(X)
     crit = []
     count = 0
-    while stopping_crit > eps and count < 300:
+    while stopping_crit > eps and count < max_iter:
         Xold = np.copy(X)  # (Iaux → uk, Iout → uk+1)
         
         # Primal update
-        X = X - tau * A_t((A(X) - Y)) - tau * discrete_gradient_adjoint((Uh, Uv))
-        np.clip(X, 0, 255, out=X)  # projection
+        # X = X - tau * A_t((A(X) - Y)) - tau * discrete_gradient_adjoint((Uh, Uv))
+        X = X - tau * (X - Y) - tau * discrete_gradient_adjoint((Uh, Uv))
+        # np.clip(X, 0, 255, out=X)  # projection
         
         # Dual update
         Vh, Vv = discrete_gradient(2*X - Xold)
         Vh, Vv = Uh + sigma * Vh, Uv + sigma * Vv
-        Xaux = np.maximum(np.sqrt(Vh**2 + Vv**2), 1)  # just auxiliare for computation
-        Uh = Uh / Xaux
-        Uv = Uv / Xaux
+        aux = np.maximum(np.sqrt(Vh**2 + Vv**2) / lam, 1)  # just auxiliare for computation
+        Uh = Vh / aux
+        Uv = Vv / aux
 
         # Criterion
         crit.append(objective(X, A, Y, lam))
@@ -56,7 +56,7 @@ def primal_dual_TV(Y, lam, eps, A=lambda X: X, A_t=lambda X: X):
             print('\t', count, stopping_crit)
         count += 1
     print('\t', count, stopping_crit)
-    return X, count
+    return X
 
 
 # %%
