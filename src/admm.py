@@ -3,6 +3,8 @@ import numpy as np
 import utils.splx_projection.splx_projection as splx
 import src.fbpd as fbpd
 
+from IPython.display import clear_output
+
 #%%
 def real_objective(U, Y):
     # indicatrix of positive values
@@ -23,7 +25,7 @@ def objective(U, Y):
     return np.sum(-Y * np.log(U) + U)
 
 #%%
-def admm(M, Y, rho, alpha, size, eps_abs=1e-2, eps_rel=1e-3, max_iter=25):
+def admm(M, Y, rho, alpha, sigma, size, max_iter=100):
     """ADMM without regularization parameter
     Blind source separation with Poisson noise
     
@@ -42,8 +44,8 @@ def admm(M, Y, rho, alpha, size, eps_abs=1e-2, eps_rel=1e-3, max_iter=25):
     
     # Splitting variable initialisation
     U = M @ A
-    V = A
-    Z = A
+    V = np.copy(A)
+    Z = np.copy(A)
 
     # Lagrange's multipliers initialisation
     LambdaU = np.zeros(U.shape)
@@ -56,23 +58,22 @@ def admm(M, Y, rho, alpha, size, eps_abs=1e-2, eps_rel=1e-3, max_iter=25):
 
     # Pre-computation
     I = np.eye(M.shape[1])
-    C = np.linalg.inv(I + M.T @ M)  # auxilary variable (pre-computation)
+    C = np.linalg.inv(2*I + M.T @ M)  # auxilary variable (pre-computation)
 
-    iter = 0
-    while iter < max_iter:
-        # [TODO] : stopping criterion on norm_primal <= eps_primal and norm_dual <= eps_dual
-        print(iter)
-        A =  C @ (M.T @ (U - LambdaU) + (V - LambdaV) + (Z - LambdaZ))
+    for _ in range(max_iter):
+        A = C @ (M.T @ (U - LambdaU) + (V - LambdaV) + (Z - LambdaZ))
+        MA = M @ A
 
         # Splitting variables update
-        Nu = (M @ A) + LambdaU - 1/rho  # auxilary variable
-        U = 0.5 * (Nu + np.sqrt(Nu**2 + (4*Y/rho)))
+        Nu = MA + LambdaU - 1/rho  # auxilary variable
+        U = 0.5 * (Nu + np.sqrt(Nu**2 + 4*Y/rho))
         V = splx.splx_projection(A + LambdaV, r=1)
         # V = np.maximum(A - LambdaV, 0)
-        Z = fbpd.primal_dual_TV_2D(A + LambdaZ, alpha / rho, 0.0001)
+
+        Z = fbpd.primal_dual_TV(A + LambdaZ, sigma, alpha / rho, 0.001)
 
         # Lagrange's multipliers update
-        LambdaU = LambdaU + M @ A - U
+        LambdaU = LambdaU + MA - U
         LambdaV = LambdaV + A - V
         LambdaZ = LambdaZ + A - Z
         
@@ -80,5 +81,8 @@ def admm(M, Y, rho, alpha, size, eps_abs=1e-2, eps_rel=1e-3, max_iter=25):
         norms_primal_U.append(np.linalg.norm(M @ A - U, 2))  # residual computation
         objectives.append(objective(M@A, Y))
 
-        iter += 1
+
+        clear_output(wait = True)
+        print(f"{_+1}    {100*(_+1)/max_iter:.2f} %")
+
     return A, norms_primal_U, objectives
