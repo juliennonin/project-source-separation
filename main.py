@@ -11,10 +11,11 @@ from src.admm import admm
 
 #%%
 np.random.seed(179)
-R, Nx = 5, 50  # nb of endmembers, size of map
-A = data.generate_abundance_map(R, Nx, thresh=-np.inf, alpha=3)
+# R, Nx = 5, 50  # nb of endmembers, size of map
+# A = data.generate_abundance_map(R, Nx, thresh=-np.inf, alpha=3)
+A, (Nx, Ny, R) = data.fetch_abundance_map()
 wavelengths, mat_names, M = data.generate_endmembers(R)
-L, N = len(wavelengths), Nx * Nx
+L, N = len(wavelengths), Nx * Ny
 COEF = 500
 M *= COEF
 Y_true = M @ A
@@ -33,7 +34,7 @@ sA = SliderPlot(axA, A, title=r"$A_r$", legend=r"r")
 axMA = plt.subplot(223)
 sMA = SliderPlot(axMA, Y_true, slider=sY.slider, valinit=91)
 axM = plt.subplot(224)
-spectrum, = axM.plot(wavelengths, M[:,3])
+spectrum, = axM.plot(wavelengths, M[:,2])
 # plt.title(mat_names[3])
 sA.slider.on_changed(lambda r : spectrum.set_ydata(M[:, r]))
 plt.show()
@@ -50,11 +51,15 @@ plt.show()
 A_hat, r, F = admm(M, Y, rho=0.1, alpha=1e-3, sigma=0.02, size=(R, N))  # rho=0.1
 
 #%% Display result
+%matplotlib qt
 fig = plt.figure()
-axY = plt.subplot(121)
+axY = plt.subplot(131)
 sY = SliderPlot(axY, Y, title="Y")
-axA = plt.subplot(122)
-sA = SliderPlot(axA, M@A_hat, title="Y hat")
+axYh = plt.subplot(132)
+# sA = SliderPlot(axA, M@A_hat, title="Y hat")
+sYh = SliderPlot(axYh, M@A_hat, slider=sY.slider, title="Y hat")
+axYt = plt.subplot(133)
+sYt = SliderPlot(axYt, Y_true, slider=sY.slider, title="Y true")
 plt.show()
 
 #%%

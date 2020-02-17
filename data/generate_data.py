@@ -44,6 +44,12 @@ def generate_abundance_map(R, size, thresh=-np.inf, alpha=3):
     assert np.all(1 - np.sum(A, axis=0) <= 1e-10), "The sum of each column must be equal to 1"
     return A
 
+def fetch_abundance_map(file='data/remote_sensing/madonna_vca.mat'):
+    data = sio.loadmat(file)
+    A = data['A_VCA']
+    Nx, Ny, R = A.shape
+    return A.reshape(-1, R).T, (Nx, Ny, R) 
+
 def fetch_endmembers():
     file = 'data/remote_sensing/USGS_1995_Library.mat'
     data = sio.loadmat(file)
@@ -61,7 +67,7 @@ def generate_endmembers(R, seed=None):
     rd = np.random.RandomState(seed)
     r = rd.choice(R_tot, R, replace=False)  # randomly select R indices
     print(r)
-    return wavelengths, [names[i] for i in r], endmembers[:, r] 
+    return wavelengths, [names[i] for i in r], endmembers[:, r]
 
 def generate_observation(M, A):
     Lambda = M @ A

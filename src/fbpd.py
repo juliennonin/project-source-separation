@@ -43,13 +43,13 @@ def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=
         
         # Dual update
         Vh, Vv = discrete_gradient(2*X - Xold)
-        Vh, Vv = Uh + sigma * Vh, Uv + sigma * Vv
+        Vh = Uh + sigma * Vh
         aux = np.maximum(np.sqrt(Vh**2 + Vv**2) / lam, 1)  # just auxiliare for computation
         Uh = Vh / aux
         Uv = Vv / aux
 
         # Criterion
-        crit.append(objective(X, A, Y, lam))
+        crit.append(objective(X, Y, lam))
         # stopping_crit = np.max(np.abs(X - Xold) / np.abs(Xold))
         if count > 1:
             stopping_crit = np.abs(crit[-1] - crit[-2]) / np.abs(crit[-2])
