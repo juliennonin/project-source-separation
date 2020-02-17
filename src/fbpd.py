@@ -23,7 +23,7 @@ def objective(X, Y, lam):
 
 #%%
 def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=50):
-    print(f'\tdual primal TV with sigma={sigma}, lambda={lam}, eps={eps}')
+    # print(f'\tdual primal TV with sigma={sigma}, lambda={lam}, eps={eps}')
     X = np.copy(Y)
     stopping_crit = eps + 1 
     tau = 0.99 / (0.5 + 8*sigma)
@@ -44,6 +44,7 @@ def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=
         # Dual update
         Vh, Vv = discrete_gradient(2*X - Xold)
         Vh = Uh + sigma * Vh
+        Vv = Uv + sigma * Vv
         aux = np.maximum(np.sqrt(Vh**2 + Vv**2) / lam, 1)  # just auxiliare for computation
         Uh = Vh / aux
         Uv = Vv / aux
@@ -54,19 +55,20 @@ def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=
         if count > 1:
             stopping_crit = np.abs(crit[-1] - crit[-2]) / np.abs(crit[-2])
             # print(count, stopping_crit)
-        if count%10==0:
-            print('\t', count, stopping_crit)
+        # if count%10==0:
+            # print('\t', count, stopping_crit)
         count += 1
-    print('\t', count, stopping_crit)
+    # print('\t', count, stopping_crit)
     return X
 
 # %%
 def primal_dual_TV_2D(Y, *args):
     R, N = np.shape(Y)
     Nx = int(np.sqrt(N))
+    Yy = np.copy(Y)
     for i in range(len(Y)):
-        X, _ = primal_dual_TV(Y[i].reshape((Nx, -1)).T, *args)
-        Y[i] = np.hstack(X.T)
-    return Y
+        X = primal_dual_TV(Y[i].reshape((Nx, -1)).T, *args)
+        Yy[i] = np.hstack(X.T)
+    return Yy
 
 # %%

@@ -1,7 +1,7 @@
 #%%
 import numpy as np
 import utils.splx_projection.splx_projection as splx
-import src.fbpd as fbpd
+from src.fbpd import primal_dual_TV_2D
 
 from IPython.display import clear_output
 
@@ -70,12 +70,14 @@ def admm(M, Y, rho, alpha, sigma, size, max_iter=100):
         V = splx.splx_projection(A + LambdaV, r=1)
         # V = np.maximum(A - LambdaV, 0)
 
-        Z = fbpd.primal_dual_TV(A + LambdaZ, sigma, alpha / rho, 0.001)
+        if alpha != 0:
+            Z = primal_dual_TV_2D(A + LambdaZ, 0.01, 0.01, 0.001)
 
         # Lagrange's multipliers update
         LambdaU = LambdaU + MA - U
         LambdaV = LambdaV + A - V
-        LambdaZ = LambdaZ + A - Z
+        if alpha != 0:
+            LambdaZ = LambdaZ + A - Z
         
         # Residuals & objective update
         norms_primal_U.append(np.linalg.norm(M @ A - U, 2))  # residual computation
