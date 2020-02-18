@@ -71,7 +71,7 @@ def admm(M, Y, rho, alpha, sigma, size, max_iter=100):
         # V = np.maximum(A - LambdaV, 0)
 
         if alpha != 0:
-            Z = primal_dual_TV_2D(A + LambdaZ, 0.01, 0.01, 0.001)
+            Z = primal_dual_TV_2D(A + LambdaZ, sigma, alpha/rho, 0.001)
 
         # Lagrange's multipliers update
         LambdaU = LambdaU + MA - U

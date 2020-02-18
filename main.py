@@ -1,6 +1,6 @@
 #%%
-# %load_ext autoreload
-# %autoreload 2
+%load_ext autoreload
+%autoreload 2
 
 import data.generate_data as data
 import numpy as np
@@ -25,7 +25,7 @@ Y = poisson(Y_true)
 N_display =  np.random.randint(N, size=(5))
 
 #%% Display data
-# %matplotlib qt
+%matplotlib qt
 fig = plt.figure(figsize=(6, 8))
 axY = plt.subplot(221)
 sY = SliderPlot(axY, Y, title=r"$Y_\lambda$", legend=r"$\lambda$", valinit=91)
@@ -40,7 +40,7 @@ sA.slider.on_changed(lambda r : spectrum.set_ydata(M[:, r]))
 plt.show()
 
 #%%
-# %matplotlib inline
+%matplotlib inline
 for i, n in enumerate(N_display):
     plt.plot(Y_true[:,n], c=f'C{i}')
     plt.plot(Y[:,n], c=f'C{i}', label=str(n))
@@ -48,10 +48,10 @@ plt.legend()
 plt.show()
 
 #%% Compute ADMM without regularization term
-A_hat, r, F = admm(M, Y, rho=0.1, alpha=1e-3, sigma=0.01, size=(R, N))  # rho=0.1
+A_hat, r, F = admm(M, Y, rho=0.1, alpha=1e-2, sigma=0.01, size=(R, N))  # rho=0.1
 
 #%% Display result
-# %matplotlib qt
+%matplotlib qt
 fig = plt.figure()
 axY = plt.subplot(131)
 sY = SliderPlot(axY, Y, title="Y")
@@ -63,10 +63,10 @@ sYt = SliderPlot(axYt, Y_true, slider=sY.slider, title="Y true")
 plt.show()
 
 #%%
-# %matplotlib qt
+%matplotlib qt
 fig = plt.figure()
 axY = plt.subplot(121)
-sA = SliderPlot(axY, A, title="A")
+sA = SliderPlot(axY, A, title="A true")
 axYh = plt.subplot(122)
 sYh = SliderPlot(axYh, A_hat, slider=sA.slider, title="A hat")
 plt.show()
@@ -86,5 +86,15 @@ plt.plot(r)
 # plt.plot(F)
 plt.show()
 
+
+# %% Test TV update
+from src.fbpd import primal_dual_TV_2D
+C = np.copy(A_hat)
+D = primal_dual_TV_2D(C, 0.01, 0.01, 0.0001)
+fig = plt.figure()
+axC = plt.subplot(121)
+sC = SliderPlot(axC, C, title="before TV")
+axD = plt.subplot(122)
+sD = SliderPlot(axD, D, slider=sC.slider, title="after TV")
 
 # %%
