@@ -14,12 +14,12 @@ def discrete_gradient_adjoint(U):
     return np.append(np.vstack(-Uh[:,0]), Uh[:,:-1] - Uh[:,1:], axis=1) + \
            np.append([-Uv[0]], Uv[:-1,:] - Uv[1:,:], axis=0)
 
-def TV(X):
+def total_variation(X):
     Uh, Uv = discrete_gradient(X)
     return np.sum(np.sqrt(Uh**2 + Uv**2))
 
 def objective(X, Y, lam):
-    return 0.5 * np.linalg.norm(X - Y, ord='fro')**2 + lam * TV(X)
+    return 0.5 * np.linalg.norm(X - Y, ord='fro')**2 + lam * total_variation(X)
 
 #%%
 def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=50):
@@ -27,9 +27,7 @@ def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=
     X = np.copy(Y)
     stopping_crit = eps + 1 
     tau = 0.99 / (0.5 + 8*sigma)
-    iter = 0
     
-    n, m = np.shape(Y)
     Uh, Uv = discrete_gradient(X)
     crit = []
     count = 0
@@ -62,12 +60,12 @@ def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=
     return X
 
 # %%
-def primal_dual_TV_2D(Y, *args):
-    R, N = np.shape(Y)
+def primal_dual_TV_2D(Y, sigma, lam, eps):
+    N = np.shape(Y)[1]
     Nx = int(np.sqrt(N))
     Yy = np.copy(Y)
     for i in range(len(Y)):
-        X = primal_dual_TV(Y[i].reshape((Nx, -1)).T, *args)
+        X = primal_dual_TV(Y[i].reshape((Nx, -1)).T, sigma, lam, eps)
         Yy[i] = np.hstack(X.T)
     return Yy
 
