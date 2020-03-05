@@ -6,7 +6,7 @@ import data.generate_data as data
 import numpy as np
 from utils.slider_plot import SliderPlot
 import matplotlib.pyplot as plt
-from src.admm import admm
+from src.admm import admm, objective
 # %matplotlib qt
 
 #%%
@@ -47,8 +47,8 @@ for i, n in enumerate(N_display):
 plt.legend()
 plt.show()
 
-#%% Compute ADMM without regularization term
-A_hat, r, F = admm(M, Y, rho=0.1, alpha=1e-2, sigma=0.01, size=(R, N))  # rho=0.1
+#%% Compute ADMM
+A_hat, r, F, maes, cc = admm(M, Y, A, rho=0.1, alpha=1e-2, sigma=0.01, size=(R, N))  # rho=0.1
 
 #%% Display result
 %matplotlib qt
@@ -72,6 +72,7 @@ sYh = SliderPlot(axYh, A_hat, slider=sA.slider, title="A hat")
 plt.show()
 
 #%%
+%matplotlib inline
 # N_display = np.random.randint(N, size=(5))
 for i, n in enumerate(N_display):
     plt.plot((M@A_hat)[:,n], c=f'C{i}', label=str(n))
@@ -80,10 +81,26 @@ plt.margins(x=0)
 plt.legend()
 plt.show()
 #%% Display residuals and objectives
-plt.figure()
-plt.plot(r)
+%matplotlib inline
+plt.figure(figsize=(10,6))
 
-# plt.plot(F)
+plt.subplot(221)
+plt.plot(maes)
+plt.ylabel('MAE')
+
+plt.subplot(222)
+plt.plot(F)
+plt.ylabel(r'objective $\sum(MA - Y\log(MA))$')
+
+plt.subplot(223)
+plt.plot(r)
+plt.ylabel(r'$\Vert MA-U\Vert_2$')
+
+plt.subplot(224)
+plt.plot(cc)
+plt.ylabel(r'$\Vert A-V\Vert_2$')
+
+plt.tight_layout()
 plt.show()
 
 

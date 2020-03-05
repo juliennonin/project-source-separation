@@ -22,7 +22,7 @@ def objective(X, Y, lam):
     return 0.5 * np.linalg.norm(X - Y, ord='fro')**2 + lam * total_variation(X)
 
 #%%
-def primal_dual_TV(Y, sigma, lam, eps, A=lambda X: X, A_t=lambda X: X, max_iter=50):
+def primal_dual_TV(Y, sigma, lam, eps, max_iter=50):
     # print(f'\tdual primal TV with sigma={sigma}, lambda={lam}, eps={eps}')
     X = np.copy(Y)
     stopping_crit = eps + 1 

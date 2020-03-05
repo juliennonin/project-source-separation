@@ -25,13 +25,14 @@ def objective(U, Y):
     return np.sum(-Y * np.log(U) + U)
 
 #%%
-def admm(M, Y, rho, alpha, sigma, size, max_iter=100):
+def admm(M, Y, Atrue, rho, alpha, sigma, size, max_iter=100):
     """ADMM without regularization parameter
     Blind source separation with Poisson noise
     
     Arguments:
         M {array} -- linear operator modeling the acquisition
         Y {array} -- acquired data with Poisson noise
+        Atrue {array} -- true abundance map
         rho {positive float} -- penalty paramater
         alpha {positive float} -- regularization parameter
         size {tuple} -- size of the abundacy map to restore
@@ -55,6 +56,8 @@ def admm(M, Y, rho, alpha, sigma, size, max_iter=100):
     # Residuals & objective function initialisation
     norms_primal_U = []  # list of norms of primal residual for U
     objectives = []
+    maes = []
+    crit_constraints = []
 
     # Pre-computation
     I = np.eye(M.shape[1])
@@ -80,11 +83,13 @@ def admm(M, Y, rho, alpha, sigma, size, max_iter=100):
             LambdaZ = LambdaZ + A - Z
         
         # Residuals & objective update
-        norms_primal_U.append(np.linalg.norm(M @ A - U, 2))  # residual computation
-        objectives.append(objective(M@A, Y))
+        norms_primal_U.append(np.linalg.norm(MA - U, 2))  # residual computation
+        objectives.append(objective(MA, Y))
+        maes.append(np.linalg.norm(A - Atrue, 1))
+        crit_constraints.append(np.linalg.norm(A - V, 2))
 
 
         clear_output(wait = True)
         print(f"{_+1}    {100*(_+1)/max_iter:.2f} %")
 
-    return A, norms_primal_U, objectives
+    return A, norms_primal_U, objectives, maes, crit_constraints
