@@ -22,30 +22,34 @@ def objective(X, Y, lam):
     return 0.5 * np.linalg.norm(X - Y, ord='fro')**2 + lam * total_variation(X)
 
 #%%
-def primal_dual_TV(Y, sigma, lam, eps, max_iter=50):
+def primal_dual_TV(Y, lam, tau, eps, max_iter=50):
     # print(f'\tdual primal TV with sigma={sigma}, lambda={lam}, eps={eps}')
-    X = np.copy(Y)
+    rho = 1.99  # relaxation parameter, in [1, 2[
+    sigma = 1/tau/8  # proximal parameter
+    # tau = 0.99 / (0.5 + 8*sigma)
+    
+    X = np.copy(Y)  # Intialization of the solution
     stopping_crit = eps + 1 
-    tau = 0.99 / (0.5 + 8*sigma)
     
     Uh, Uv = discrete_gradient(X)
     crit = []
     count = 0
-    while stopping_crit > eps and count < max_iter:
-        Xold = np.copy(X)  # (Iaux → uk, Iout → uk+1)
-        
+    while stopping_crit > eps and count < max_iter:        
         # Primal update
-        # X = X - tau * A_t((A(X) - Y)) - tau * discrete_gradient_adjoint((Uh, Uv))
-        X = X - tau * (X - Y) - tau * discrete_gradient_adjoint((Uh, Uv))
-        # np.clip(X, 0, 255, out=X)  # projection
-        
+        X_= X - tau * (X - Y) - tau * discrete_gradient_adjoint((Uh, Uv))
+
         # Dual update
-        Vh, Vv = discrete_gradient(2*X - Xold)
+        Vh, Vv = discrete_gradient(2*X_ - X)
         Vh = Uh + sigma * Vh
         Vv = Uv + sigma * Vv
         aux = np.maximum(np.sqrt(Vh**2 + Vv**2) / lam, 1)  # just auxiliare for computation
-        Uh = Vh / aux
-        Uv = Vv / aux
+        Uh_ = Vh / aux
+        Uv_ = Vv / aux
+
+        # Relaxation
+        X = X + rho * (X_ - X)
+        Uh = Uh + rho * (Uh_ - Uh)
+        Uv = Uv + rho * (Uv_ - Uv)
 
         # Criterion
         crit.append(objective(X, Y, lam))
