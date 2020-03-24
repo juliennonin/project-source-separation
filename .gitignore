@@ -1,5 +1,6 @@
 ### Code ###
 .vscode/*
+.vscode/settings.json
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -18,3 +19,4 @@ ipython_config.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 */__pycache__/
+.vscode/settings.json

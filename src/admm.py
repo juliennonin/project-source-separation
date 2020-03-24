@@ -22,10 +22,10 @@ def real_objective(U, Y):
     return np.sum(U + I - L)
 
 def objective(U, Y):
-    return np.sum(-Y * np.log(U) + U)
+    return np.sum(U - Y * np.log(U))
 
 #%%
-def admm(M, Y, Atrue, rho, alpha, sigma, size, max_iter=100):
+def admm(M, Y, Atrue, rho, alpha, sigma, size, max_iter=100, verbose=True):
     """ADMM without regularization parameter
     Blind source separation with Poisson noise
     
@@ -41,6 +41,7 @@ def admm(M, Y, Atrue, rho, alpha, sigma, size, max_iter=100):
         norms_primal_U {list} -- norm of primal residual for U for each iteration
         objectives {list} -- evaluation of the objective dunction at each iteration
     """        
+    eps_abs, eps_rel = 1e-3, 1e-3
     A = np.zeros(size)
     
     # Splitting variable initialisation
@@ -54,6 +55,11 @@ def admm(M, Y, Atrue, rho, alpha, sigma, size, max_iter=100):
     LambdaZ = np.zeros(Z.shape)
 
     # Residuals & objective function initialisation
+    metrics = {"objective" : [],
+               "MAE" : [],
+               "primal residual" : [],
+               "dual residual" : [],
+               "constraint A-V" : []}
     norms_primal_U = []  # list of norms of primal residual for U
     objectives = []
     maes = []
@@ -64,6 +70,8 @@ def admm(M, Y, Atrue, rho, alpha, sigma, size, max_iter=100):
     C = np.linalg.inv(2*I + M.T @ M)  # auxilary variable (pre-computation)
 
     for _ in range(max_iter):
+        U_prev, V_prev, Z_prev = np.copy(U), np.copy(V), np.copy(Z)
+
         A = C @ (M.T @ (U - LambdaU) + (V - LambdaV) + (Z - LambdaZ))
         MA = M @ A
 
@@ -83,13 +91,28 @@ def admm(M, Y, Atrue, rho, alpha, sigma, size, max_iter=100):
             LambdaZ = LambdaZ + A - Z
         
         # Residuals & objective update
-        norms_primal_U.append(np.linalg.norm(MA - U, 2))  # residual computation
-        objectives.append(objective(MA, Y))
-        maes.append(np.linalg.norm(A - Atrue, 1))
-        crit_constraints.append(np.linalg.norm(A - V, 2))
+        eps_pri = np.sqrt(U.size) * eps_abs + eps_rel * max(np.linalg.norm(MA, 2), np.linalg.norm(U, 2))
+        eps_dual = np.sqrt(A.size) * eps_abs + eps_rel * np.linalg.norm(rho * M.T @ LambdaU, 2)
+
+        r = rho * (np.linalg.norm(MA - U, 'fro')
+                 + np.linalg.norm(A - V, 'fro')
+                 + np.linalg.norm(A - Z, 'fro'))
+        s = rho * (np.linalg.norm(M.T @ (U-U_prev), 'fro')
+                 + np.linalg.norm(V - V_prev, 'fro')
+                 + np.linalg.norm(Z - Z_prev, 'fro'))
+        metrics["primal residual"].append(r)
+        metrics["dual residual"].append(s)
+        metrics["objective"].append(objective(MA, Y))
+        metrics["MAE"].append(np.linalg.norm(A - Atrue, 1))
+        metrics["constraint A-V"].append(np.linalg.norm(A - V, 'fro'))
+        
 
 
         clear_output(wait = True)
-        print(f"{_+1}    {100*(_+1)/max_iter:.2f} %")
+        print(f"{_+1}    {100*(_+1)/max_iter:.2f}%")
+        if verbose:
+            for crit, values in metrics.items():
+                print(f"{crit:>15} = {values[-1]}")
+            # print(f"{_+1}    {100*(_+1)/max_iter:.2f}   {primal_res}  {dual_res} \n eps_pri={eps_pri}, eps_dual={eps_dual}%")
 
-    return A, norms_primal_U, objectives, maes, crit_constraints
+    return A, metrics

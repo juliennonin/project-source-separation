@@ -48,7 +48,7 @@ plt.legend()
 plt.show()
 
 #%% Compute ADMM
-A_hat, r, F, maes, cc = admm(M, Y, A, rho=0.1, alpha=1e-2, sigma=0.01, size=(R, N))  # rho=0.1
+A_hat, metrics = admm(M, Y, A, rho=0.1, alpha=1e-2, sigma=0.01, size=(R, N), max_iter=200)  # rho=0.1
 
 #%% Display result
 %matplotlib qt
@@ -82,24 +82,13 @@ plt.legend()
 plt.show()
 #%% Display residuals and objectives
 %matplotlib inline
-plt.figure(figsize=(10,6))
-
-plt.subplot(221)
-plt.plot(maes)
-plt.ylabel('MAE')
-
-plt.subplot(222)
-plt.plot(F)
-plt.ylabel(r'objective $\sum(MA - Y\log(MA))$')
-
-plt.subplot(223)
-plt.plot(r)
-plt.ylabel(r'$\Vert MA-U\Vert_2$')
-
-plt.subplot(224)
-plt.plot(cc)
-plt.ylabel(r'$\Vert A-V\Vert_2$')
-
+nrows = (len(metrics) + 1) // 2
+plt.figure(figsize=(10,3*nrows))
+for i, (crit, values) in enumerate(metrics.items()):
+    plt.subplot(nrows, 2, i+1)
+    plt.plot(values[:])
+    plt.ylabel(crit)
+    # plt.yscale('log')
 plt.tight_layout()
 plt.show()
 
